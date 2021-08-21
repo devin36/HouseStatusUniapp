@@ -1,0 +1,10 @@
+{
+    "id": "sf-table",
+    "name": "renderjs_element_table",
+    "version": "1.0.4",
+    "description": "基于 uni-app 2.5.5+ renderjs 实现的 element_table 示例",
+    "keywords": [
+        "renderjs",
+        "table"
+    ]
+}
