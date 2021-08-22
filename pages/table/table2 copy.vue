@@ -3,10 +3,6 @@
 		<!-- #ifdef APP-PLUS || H5 -->
 		<view :data="tableData" :change:data="renderView.updateData" id="tableTemplate">
 		</view>
-		<view :data="currentDate" :change:data="renderView.updateCurrentDate" id="tableDate">
-		</view>
-		<view :data="title" :change:data="renderView.updateTitle" id="title">
-		</view>
 		<!-- <view :header="tableHeader" :change:header="renderView.updateHeader" id="tableHeader">
 		</view> -->
 		<!-- #endif -->
@@ -27,21 +23,7 @@
 		data() {
 			return {
 				tableData: [],
-				dateDic:{"2021-01":"2021-01-01 00:00:00 - 2021-01-31 00:00:00",
-						"2021-02":"2021-02-01 00:00:00 - 2021-02-28 00:00:00",
-						"2021-03":"2021-03-01 00:00:00 - 2021-03-31 00:00:00",
-						"2021-04":"2021-04-01 00:00:00 - 2021-04-30 00:00:00",
-						"2021-05":"2021-05-01 00:00:00 - 2021-05-31 00:00:00",
-						"2021-06":"2021-06-01 00:00:00 - 2021-06-30 00:00:00",
-						"2021-07":"2021-07-01 00:00:00 - 2021-07-31 00:00:00",
-						"2021-08":"2021-08-01 00:00:00 - 2021-08-31 00:00:00",
-						"2021-09":"2021-09-01 00:00:00 - 2021-09-30 00:00:00",
-						"2021-10":"2021-10-01 00:00:00 - 2021-10-31 00:00:00",
-						"2021-11":"2021-11-01 00:00:00 - 2021-11-30 00:00:00",
-						"2021-12":"2021-12-01 00:00:00 - 2021-11-31 00:00:00",
-						},
-				currentDate: '',
-				title:''
+				statusMap: {"0":"空","1":"满房"},
 			}
 		},
 		onUnload() {},
@@ -80,31 +62,33 @@
 				// 					]}
 					// var md5str = "021fb57e6a3b163a";
 					// var md5str = "8b42bca0745dc36e";
-					t.currentDate = option.date;
-					console.log(option.date);
-							
 					var md5str = option.tunnel;
-					//var date = "2021-08-01 00:00:00 - 2021-08-22 00:00:00";
-					var date = t.dateDic[option.date];
+					var date = "2021-08-01 00:00:00 - 2021-08-22 00:00:00";
 					var data = {
 						'Tunnel':md5str,
 						'DateScope':date,
 					}
 					data = JSON.stringify(data)
 					houseStatusApi.houseStatusList(data).then(
-									data => {
-										//console.log(JSON.parse(data.data.Data));
-										t.tableData = JSON.parse(data.data.Data);
-										t.setTitle(data.data.Extents);
-									},
-									err => {
-									}
-								  );															
+															data => {
+																console.log(JSON.parse(data.data.Data));
+																t.tableData = JSON.parse(data.data.Data);
+															 // if (!data) {
+															 //  console.log(data.Message);
+															 //  return;
+															 // }
+															 // if (data.Tag==1) {
+															 //  console.log("登录成功!");  
+															 // }
+															},
+															err => {
+															}
+										                  );															
 				},
 				1000)
-		},		
-			
-		 /* 监听table数据对象 为了解决table加了fixed而产生的错位bug*/
+		},
+		
+		 /* 监听table数据对象 */
 		watch: {
 		    tableData(val) {
 		      this.doLayout();
@@ -137,30 +121,23 @@
 				sort()
 			},
 			
+			getHouseStatus() {
+			   let date = "2021/01/02"; 
+			   //let time = "11:22:33";
+			   houseStatusApi.houseStatusList(date, time).then(data => {
+				if (data.code != 0) {
+				 console.log("返回成功", data);
+				 return;
+				}
+				t.tableData = data.body;
+				// if (isCollect == 1) {
+				//  this.$toast("取消成功");
+				// } else {
+				//  this.$toast("收藏成功");
+				// }
+			   });
+			}
 			
-			setTitle(title){
-				return uni.setNavigationBarTitle({
-					title:title
-				})
-			},
-			
-	
-			// getHouseStatus() {
-			//    let date = "2021/01/02"; 
-			//    //let time = "11:22:33";
-			//    houseStatusApi.houseStatusList(date, time).then(data => {
-			// 	if (data.code != 0) {
-			// 	 console.log("返回成功", data);
-			// 	 return;
-			// 	}
-			// 	t.tableData = data.body;
-			// 	// if (isCollect == 1) {
-			// 	//  this.$toast("取消成功");
-			// 	// } else {
-			// 	//  this.$toast("收藏成功");
-			// 	// }
-			//    })
-			// }					
 		}
 	}
 
@@ -217,24 +194,21 @@
 	export default {
 		mounted() {
 			t = this;
-			
 			var tableTemplate = document.getElementById('tableTemplate');
 			//表格模板的教程请看官方文档https://element.eleme.cn/#/zh-CN/component/table
 			tableTemplate.innerHTML =
 				`
 			<div id="vueCtrl" v-cloak>
 				<template>
-					<el-table :data="tableData.data" border stripe :height="tableHeight" @cell-click="clickCell" @sort-change="sortChange"  :default-sort="{prop: 'count', order: 'descending'}" :cell-class-name="addClass" ref="table">
+					<el-table :data="tableData.data" border stripe :height="tableHeight" @cell-click="clickCell" @sort-change="sortChange"  :default-sort="{prop: 'count', order: 'descending'}" ref="table">
 						<el-table-column fixed width="150" prop="date">
 							<template slot="header" slot-scope="scope">
-							        <el-link class="el-icon-d-arrow-left" @click="goLastMonth(currentDate)"></el-link>
-									<span>{{currentDate}}</span>
-									<el-link class="el-icon-d-arrow-right" @click="goNextMonth(currentDate)"></el-link>
+							        <i class="el-icon-time"></i>
+									<span>adfadsfasdf</span>
 							</template>
 						</el-table-column>
-						
-						<el-table-column v-for="item in tableData.header" :label="item.name" :prop="item.value" :formatter="forStatus">
-						</el-table-column>							
+						<el-table-column v-for="item in tableData.header" :label="item.name" :prop="item.value">
+						</el-table-column>
 					</el-table>
 				</template>
 			</div>`;
@@ -269,11 +243,8 @@
 					el: '#vueCtrl',
 					data: {
 						tableData: [],
-						tableHeight: window.screen.height - 110, //表格高度，需要指定
-						currentDate: '',
-						title:'',
+						tableHeight: window.screen.height - 110 //表格高度，需要指定
 					},
-				
 					watch: {
 						tableData(val) {
 						      this.doLayout();
@@ -309,87 +280,17 @@
 							this.$nextTick(() => {
 									that.$refs.table.doLayout()
 							})
-						},
-						
-						forStatus(row,column,cellValue,index){
-							if(cellValue == '0'){
-								return "空房";
-							}else if(cellValue == '1'){
-								return "满房";
-							}else{
-								return ';'
-							}
-						},
-						
-						goLastMonth(currentDate){
-							let oUrl = window.location.href.toString();
-							
-							let year = currentDate.substring(0,4)
-							let month = currentDate.substring(5);
-							let lastyearint = parseInt(year);
-							let monthint = parseInt(month);
-							let lastmonth = monthint - 1;
-							if(lastmonth==0){
-								lastyearint = lastyearint - 1;
-								lastmonth = 12;
-							}
-							let date = lastyearint.toString() + "-" + lastmonth.toString().padStart(2, '0');
-							
-							var re=eval('/('+ "date"+'=)([^&]*)/gi');
-							var nUrl = oUrl.replace(re,"date"+'='+date);
-							
-							console.log("year:" + nUrl);
-							console.log("current:"+lastmonth);
-							window.location.href=nUrl;
-							
-						},
-						
-						goNextMonth(currentDate){
-							let oUrl = window.location.href.toString();
-							
-							let year = currentDate.substring(0,4)
-							let month = currentDate.substring(5);
-							let lastyearint = parseInt(year);
-							let monthint = parseInt(month);
-							let lastmonth = monthint + 1;
-							if(lastmonth==13){
-								lastyearint = lastyearint + 1;
-								lastmonth = 1;
-							}
-							let date = lastyearint.toString() + "-" + lastmonth.toString().padStart(2, '0');
-							
-							var re=eval('/('+ "date"+'=)([^&]*)/gi');
-							var nUrl = oUrl.replace(re,"date"+'='+date);
-							
-							console.log("year:" + nUrl);
-							console.log("current:"+lastmonth);
-							window.location.href=nUrl;
-							
-						},
-						
-						addClass({row,column,rowIndex,columnIndex}){
-							//console.log(row);
 						}
 					}
 				});
 				this.$ownerInstance.callMethod('receiveMsg', {
-					msg: '获取房态信息成功'
+					msg: '初始化成功'
 				})
 			},
 			updateData(newValue, oldValue, ownerInstance, instance) {
 				// 监听 service 层数据变更
 				vm.tableData = newValue;
-			},	
-			
-			updateCurrentDate(newValue, oldValue, ownerInstance, instance){
-				vm.currentDate = newValue;
-			},
-			
-			updateTitle(newValue, oldValue, ownerInstance, instance){
-				vm.title = newValue;
-			}
-			
-			
+			},			
 		}
 	}
 

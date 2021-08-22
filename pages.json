@@ -9,7 +9,7 @@
 		{
 			"path": "pages/table/table2",
 			"style": {
-				"navigationBarTitleText": "房态图"
+				"navigationBarTitleText": ""
 			}
 		}
 	],
